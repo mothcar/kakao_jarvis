@@ -90,10 +90,10 @@ function resultSet(keyword) {
 
     //쉼표를 통해 여러 키워드를 입력한 경우
     if (keyword.indexOf(',') != -1) {
-        var strArray = keyword.split(',');
+        var keywordArray = keyword.split(',');
 
-        for(var index in strArray){
-          result+=strArray[index]+' 검색량 조회 결과\n\n';
+        for(var index in keywordArray){
+          result+=keywordArray[index]+' 검색량 조회 결과\n\n';
         }
     }
 
@@ -101,29 +101,28 @@ function resultSet(keyword) {
     else {
         var keywordOption = keyword.charAt(keyword.length - 1); //옵션 추출
 
+        //기본 검색량 조회
+        result = keyword + ' 검색량 조회 결과';
+
         //검색량+쇼핑 연관검색어 조회
         if (keywordOption == '.') {
             keyword = keyword.substring(0, keyword.length - 1);
 
-            result = keyword + ' 검색량+쇼핑 연관검색어 조회 결과';
+            result += '+쇼핑 연관검색어 조회 결과';
         }
+
         //검색량+스팜상품수+1등상품(광고상품 제외)의 카테고리 조회
         else if (keywordOption == '!') {
             keyword = keyword.substring(0, keyword.length - 1);
 
-            result = keyword + ' 검색량+스팜상품수+1등상품(광고상품 제외)의 카테고리 조회 결과';
+            result += '+스팜상품수+1등상품(광고상품 제외)의 카테고리 조회 결과';
         }
+
         //검색량+스팜효율점수 조회
         else if (keywordOption == '?') {
             keyword = keyword.substring(0, keyword.length - 1);
 
-            result = keyword + ' 검색량+스팜효율점수 조회 결과';
-        }
-        //기본 검색량 조회
-        else {
-            //searchVolume
-
-            result = keyword + ' 검색량 조회 결과';
+            result += '+스팜효율점수 조회 결과';
         }
     }
 
