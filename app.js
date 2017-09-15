@@ -39,9 +39,6 @@ app.post('/message', (req, res) => {
         content: req.body.content
     };
 
-    //사용자에게 보낼 메세지를 완성할 함수
-    var result = resultSet(_obj.content);
-
     if (_obj.content == '키워드 조회') {
         let massage = {
             "message": {
@@ -70,6 +67,8 @@ app.post('/message', (req, res) => {
         }).send(JSON.stringify(massage));
 
     } else {
+        //사용자에게 보낼 메세지를 완성할 함수
+        var result = resultSet(_obj.content);
         let massage = {
             "message": {
                 "text": result
@@ -84,43 +83,51 @@ app.post('/message', (req, res) => {
     }
 });
 
+
 //사용자에게 보낼 메세지를 완성할 함수
 function resultSet(keyword) {
-  var result = '';
+    var result = '';
 
     //쉼표를 통해 여러 키워드를 입력한 경우
     if (keyword.indexOf(',') != -1) {
         var keywordArray = keyword.split(',');
 
-        for(var index in keywordArray){
-          result+=keywordArray[index]+' 검색량 조회 결과\n\n';
+        for (var index in keywordArray) {
+            result += keywordArray[index] + ' 검색량 조회 결과\n\n';
         }
     }
 
     //하나의 키워드만 입력한 경우
     else {
-        var keywordOption = keyword.charAt(keyword.length - 1); //옵션 추출
+        //옵션 추출
+        var keywordOption = keyword.charAt(keyword.length - 1);
+
+        //옵션 제외 키워드만 추출
+        if (keywordOption == '.' || keywordOption == '!' || keywordOption == '?')
+            keyword = keyword.substring(0, keyword.length - 1);
 
         //기본 검색량 조회
-        result = keyword + ' 검색량 조회 결과';
+        result = searchVolum(keyword);
+
+        console.log("message3 : " + result);
 
         //검색량+쇼핑 연관검색어 조회
         if (keywordOption == '.') {
-            keyword = keyword.substring(0, keyword.length - 1);
+
 
             result += '+쇼핑 연관검색어 조회 결과';
         }
 
         //검색량+스팜상품수+1등상품(광고상품 제외)의 카테고리 조회
         else if (keywordOption == '!') {
-            keyword = keyword.substring(0, keyword.length - 1);
+
 
             result += '+스팜상품수+1등상품(광고상품 제외)의 카테고리 조회 결과';
         }
 
         //검색량+스팜효율점수 조회
         else if (keywordOption == '?') {
-            keyword = keyword.substring(0, keyword.length - 1);
+
 
             result += '+스팜효율점수 조회 결과';
         }
@@ -130,22 +137,49 @@ function resultSet(keyword) {
     return result;
 }
 
-function addDate(){
-  var today = new Date();
-  var nowy = today.getFullYear();
-  var nowm = today.getMonth()+1;
-  var nowd = today.getDate();
-  if(nowd<10)     nowd='0'+nowd;
-  if(nowm<10)     nowm='0'+nowm;
+//데이터 통계 기간 구하고 결과 메세지에 추가
+function addDate() {
+    var today = new Date();
+    var nowy = today.getFullYear();
+    var nowm = today.getMonth() + 1;
+    var nowd = today.getDate();
+    if (nowd < 10) nowd = '0' + nowd;
+    if (nowm < 10) nowm = '0' + nowm;
 
-  var pastday = new Date(Date.parse(today)-30*1000*60*60*24);
-  var pasty =pastday.getFullYear();
-  var pastm =pastday.getMonth()+1;
-  var pastd =pastday.getDate();
-  if(pastm<10)     pastm='0'+pastm;
-  if(pastd<10)     pastd='0'+pastd;
+    var pastday = new Date(Date.parse(today) - 30 * 1000 * 60 * 60 * 24);
+    var pasty = pastday.getFullYear();
+    var pastm = pastday.getMonth() + 1;
+    var pastd = pastday.getDate();
+    if (pastm < 10) pastm = '0' + pastm;
+    if (pastd < 10) pastd = '0' + pastd;
 
-  var result = '\n\n※데이터 통계 기간\n['+ pasty + '/'+ pastm+'/' + pastd + '] ~ [' + nowy + '/' + nowm +'/'+ nowd + ']'
+    var result = '\n\n※데이터 통계 기간\n[' + pasty + '/' + pastm + '/' + pastd + '] ~ [' + nowy + '/' + nowm + '/' + nowd + ']'
 
-  return result
+    return result
+}
+
+//네이버광고 API가 연결된 파이썬 프로그램 실행
+function searchVolum(keyword) {
+    var PythonShell = require('python-shell');
+    var temp;
+    var options = {
+        mode: 'text',
+        pythonPath: '',
+        pythonOptions: ['-u'],
+        scriptPath: '',
+        args: [keyword]
+    };
+
+    //콜백함수 동기 처리를 위한 루프
+      while(temp == undefined){
+        PythonShell.run('keyword.py', options, function(err, results) {
+            if (err) throw err;
+            temp=results[0]+"\n\n"+results[1]+"\n"+results[2]+"\n"+results[3]+"\n"+results[4];
+        });
+
+          require('deasync').runLoopOnce();
+      }
+
+
+      return temp;
 }
