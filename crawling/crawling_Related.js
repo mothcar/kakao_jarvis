@@ -9,6 +9,7 @@ exports.search=function(word){
     request(url, function (error, response, body) {
       if (!error && response.statusCode == 200) {
       //HTML body
+	console.log('Related');
         var $ = cheerio.load(body);
         var i=0;
         $("._carousel_item").each(function (idx, el) {
@@ -18,5 +19,4 @@ exports.search=function(word){
        }
     });
   });
-
 }

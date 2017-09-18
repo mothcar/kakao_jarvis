@@ -10,14 +10,12 @@ exports.search=function(word){
         var $ = cheerio.load(body);
         var jbAry = new Array();
         $(".depth").first().each(function(idx,el){
-          console.log($(el).text().trim());
-        })
-        resolve(jbAry);
+        	jbAry = $(el).text().trim();
+	})
+        resolve(jbAry.replace( /(\s*)/g, ""));
 
       }
     });
   });
 };
 
-
-}
