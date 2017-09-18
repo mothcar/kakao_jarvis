@@ -87,7 +87,7 @@ app.post('/message', (req, res) => {
 //사용자에게 보낼 메세지를 완성할 함수
 function resultSet(keyword) {
     var result = '';
-
+    var keywordOption;
     //쉼표를 통해 여러 키워드를 입력한 경우
     if (keyword.indexOf(',') != -1) {
         var keywordArray = keyword.split(',');
@@ -100,40 +100,86 @@ function resultSet(keyword) {
     //하나의 키워드만 입력한 경우
     else {
         //옵션 추출
-        var keywordOption = keyword.charAt(keyword.length - 1);
+        keywordOption = keyword.charAt(keyword.length - 1);
 
         //옵션 제외 키워드만 추출
-        if (keywordOption == '.' || keywordOption == '!' || keywordOption == '?')
+        if (keywordOption == '.' || keywordOption == '!' || keywordOption == '?' || keywordOption == '@')
             keyword = keyword.substring(0, keyword.length - 1);
 
         //기본 검색량 조회
-        result = searchVolum(keyword);
+        //if(keywordOption != '@')
+        //  result = searchVolum(keyword);
 
-        console.log("message3 : " + result);
 
         //검색량+쇼핑 연관검색어 조회
         if (keywordOption == '.') {
+            var Related = require('./crawling/crawling_Related');
+            var temp;
 
-
-            result += '+쇼핑 연관검색어 조회 결과';
+            Related.search(keyword)
+                .then(result2 => {
+                    temp = keyword + " [연관검색어]\n\n1위. " + result2[0] + "\n2위. " + result2[1] + "\n3위. " + result2[2] + "\n4위. " + result2[3] + "\n5위. " + result2[4];
+                });
+            while (temp == undefined) {
+                require('deasync').runLoopOnce();
+            }
+            result += temp;
         }
+
+
 
         //검색량+스팜상품수+1등상품(광고상품 제외)의 카테고리 조회
         else if (keywordOption == '!') {
+            var Spam = require('./crawling/crawling_Spam');
+            var Category = require('./crawling/crawling_Category');
+            var temp, temp2;
 
-
-            result += '+스팜상품수+1등상품(광고상품 제외)의 카테고리 조회 결과';
+            Spam.search(keyword)
+                .then(result2 => {
+                    temp = result2;
+                    Category.search(keyword)
+                        .then(result3 => {
+                            temp2 = result3;
+                        })
+                })
+            while (temp == undefined || temp2 == undefined) {
+                require('deasync').runLoopOnce();
+            }
+            result += '[스팜 상품 수]\n'
+            result += temp +'개\n\n';
+            result += '[카테고리]\n';
+            result += temp2;
         }
 
         //검색량+스팜효율점수 조회
         else if (keywordOption == '?') {
 
 
-            result += '+스팜효율점수 조회 결과';
+            result += '[스팜 효율 점수]\n';
+        }
+
+        //경쟁 스팜 방문자수 조회
+        else if (keywordOption == '@') {
+            var visits = require('./crawling/crawling_Visits');
+            var temp;
+
+            visits.search(keyword)
+                .then(result2 => {
+                    temp = result2;
+                })
+            while (temp == undefined) {
+                require('deasync').runLoopOnce();
+            }
+            result += '['+keyword+' 방문자 수]\n';
+            result += '총 방문자수 : ';
+            result += temp.htReturnValue.total + '명';
+            result += '\n오늘 방문자수 : ';
+            result += temp.htReturnValue.today + '명';
         }
     }
 
-    result += addDate();
+    if(keywordOption != '@')
+      result += addDate();
     return result;
 }
 
@@ -155,8 +201,9 @@ function addDate() {
 
     var result = '\n\n※데이터 통계 기간\n[' + pasty + '/' + pastm + '/' + pastd + '] ~ [' + nowy + '/' + nowm + '/' + nowd + ']'
 
-    return result
+    return result;
 }
+
 
 //네이버광고 API가 연결된 파이썬 프로그램 실행
 function searchVolum(keyword) {
